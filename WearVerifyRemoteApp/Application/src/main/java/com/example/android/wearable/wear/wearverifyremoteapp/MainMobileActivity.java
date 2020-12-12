@@ -47,42 +47,33 @@ import java.util.Set;
 public class MainMobileActivity extends AppCompatActivity implements
         CapabilityClient.OnCapabilityChangedListener {
 
-    private static final String TAG = "MainMobileActivity";
+    private static final String TAG = MainMobileActivity.class.getSimpleName();
 
-    private static final String WELCOME_MESSAGE = "Welcome to our Mobile app!\n\n";
-
-    private static final String CHECKING_MESSAGE =
-            WELCOME_MESSAGE + "Checking for Wear Devices for app...\n";
-
-    private static final String NO_DEVICES =
-            WELCOME_MESSAGE
-                    + "You have no Wear devices linked to your phone at this time.\n";
-
-    private static final String MISSING_ALL_MESSAGE =
-            WELCOME_MESSAGE
-                    + "You are missing the Wear app on all your Wear Devices, please click on the "
-                    + "button below to install it on those device(s).\n";
-
-    private static final String INSTALLED_SOME_DEVICES_MESSAGE =
-            WELCOME_MESSAGE
-                    + "Wear app installed on some your device(s) (%s)!\n\nYou can now use the "
+    private static final String MSG_CHECKING_DEVICES = "Checking for Wear devices...";
+    private static final String MSG_NO_DEVICES = "You have no Wear devices linked to your phone at this time.";
+    private static final String MSG_APP_MISSING =
+            "You are missing the Wear app on all your Wear Devices, please click on the button below to install it on those device(s).";
+    private static final String MSG_APP_INSTALLED_SOME_DEVICES =
+            "Wear app installed on some your device(s) (%s)!\n\nYou can now use the "
                     + "MessageApi, DataApi, etc.\n\n"
                     + "To install the Wear app on the other devices, please click on the button "
                     + "below.\n";
-
-    private static final String INSTALLED_ALL_DEVICES_MESSAGE =
-            WELCOME_MESSAGE
-                    + "Wear app installed on all your devices (%s)!\n\nYou can now use the "
+    private static final String MSG_APP_INSTALLED_ALL_DEVICES =
+            "Wear app installed on all your devices (%s)!\n\nYou can now use the "
                     + "MessageApi, DataApi, etc.";
 
-    // Name of capability listed in Wear app's wear.xml.
-    // IMPORTANT NOTE: This should be named differently than your Phone app's capability.
-    private static final String CAPABILITY_WEAR_APP = "verify_remote_example_wear_app";
+    /**
+     * Name of capability listed in Wear app's wear.xml.
+     *
+     * IMPORTANT NOTE: This should be named differently than your Phone app's capability.
+     */
+    private static final String CAPABILITY_WEAR_APP = "verify_tennis-math_wear_app";
 
-    // Links to Wear app (Play Store).
-    // TODO: Replace with your links/packages.
-    private static final String PLAY_STORE_APP_URI =
-            "market://details?id=com.example.android.wearable.wear.wearverifyremoteapp";
+    /**
+     * Link to Tennis Math Wear app (in Wear Play Store).
+     */
+    // TODO publish the Wear APK
+    private static final String PLAY_STORE_APP_URI = "market://details?id=com.tennismath.ui.wearos";
 
     // Result from sending RemoteIntent to wear device(s) to open app in play/app store.
     private final ResultReceiver mResultReceiver = new ResultReceiver(new Handler()) {
@@ -126,7 +117,7 @@ public class MainMobileActivity extends AppCompatActivity implements
         mInformationTextView = findViewById(R.id.information_text_view);
         mRemoteOpenButton = findViewById(R.id.remote_open_button);
 
-        mInformationTextView.setText(CHECKING_MESSAGE);
+        mInformationTextView.setText(MSG_CHECKING_DEVICES);
 
         mRemoteOpenButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -232,13 +223,13 @@ public class MainMobileActivity extends AppCompatActivity implements
             Log.d(TAG, "Waiting on Results for both connected nodes and nodes with app");
 
         } else if (mAllConnectedNodes.isEmpty()) {
-            Log.d(TAG, NO_DEVICES);
-            mInformationTextView.setText(NO_DEVICES);
+            Log.d(TAG, MSG_NO_DEVICES);
+            mInformationTextView.setText(MSG_NO_DEVICES);
             mRemoteOpenButton.setVisibility(View.INVISIBLE);
 
         } else if (mWearNodesWithApp.isEmpty()) {
-            Log.d(TAG, MISSING_ALL_MESSAGE);
-            mInformationTextView.setText(MISSING_ALL_MESSAGE);
+            Log.d(TAG, MSG_APP_MISSING);
+            mInformationTextView.setText(MSG_APP_MISSING);
             mRemoteOpenButton.setVisibility(View.VISIBLE);
 
         } else if (mWearNodesWithApp.size() < mAllConnectedNodes.size()) {
@@ -246,7 +237,7 @@ public class MainMobileActivity extends AppCompatActivity implements
             // Wear APIs (MessageApi, DataApi, etc.)
 
             String installMessage =
-                    String.format(INSTALLED_SOME_DEVICES_MESSAGE, mWearNodesWithApp);
+                    String.format(MSG_APP_INSTALLED_SOME_DEVICES, mWearNodesWithApp);
             Log.d(TAG, installMessage);
             mInformationTextView.setText(installMessage);
             mRemoteOpenButton.setVisibility(View.VISIBLE);
@@ -256,7 +247,7 @@ public class MainMobileActivity extends AppCompatActivity implements
             // Wear APIs (MessageApi, DataApi, etc.)
 
             String installMessage =
-                    String.format(INSTALLED_ALL_DEVICES_MESSAGE, mWearNodesWithApp);
+                    String.format(MSG_APP_INSTALLED_ALL_DEVICES, mWearNodesWithApp);
             Log.d(TAG, installMessage);
             mInformationTextView.setText(installMessage);
             mRemoteOpenButton.setVisibility(View.INVISIBLE);

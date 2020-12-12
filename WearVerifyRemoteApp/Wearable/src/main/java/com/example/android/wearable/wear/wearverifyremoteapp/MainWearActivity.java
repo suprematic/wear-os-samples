@@ -16,6 +16,7 @@
 package com.example.android.wearable.wear.wearverifyremoteapp;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,6 +28,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
@@ -40,49 +42,43 @@ import com.google.android.wearable.intent.RemoteIntent;
 
 import java.util.Set;
 
-/**
- * Checks if the phone app is installed on remote device. If it is not, allows user to open app
- * listing on the phone's Play or App Store.
- */
 public class MainWearActivity extends FragmentActivity implements
         AmbientModeSupport.AmbientCallbackProvider,
         CapabilityClient.OnCapabilityChangedListener {
 
-    private static final String TAG = "MainWearActivity";
+    private static final String TAG = MainWearActivity.class.getSimpleName();
 
-    private static final String WELCOME_MESSAGE = "Welcome to our Wear app!\n\n";
+    private static final String MSG_WELCOME = "Tennis Math\n\n";
+    private static final String MSG_CHECKING_APP = MSG_WELCOME
+            + "Checking for Mobile app...";
+    private static final String MSG_APP_MISSING = MSG_WELCOME
+            + "You are missing the Tennis Math app, please click on the button below to "
+            + "install it on your phone.";
 
-    private static final String CHECKING_MESSAGE =
-            WELCOME_MESSAGE + "Checking for Mobile app...\n";
+    private static final String MSG_APP_INSTALLED = MSG_WELCOME
+            + "Start tracking and activate Wear interface in the app.";
 
-    private static final String MISSING_MESSAGE =
-            WELCOME_MESSAGE
-                    + "You are missing the required phone app, please click on the button below to "
-                    + "install it on your phone.\n";
+    /** Name of capability listed in Phone app's wear.xml.
+     *
+     * IMPORTANT NOTE: This should be named differently than your Wear app's capability.
+     */
+    private static final String CAPABILITY_PHONE_APP = "verify_tennis-math_phone_app";
 
-    private static final String INSTALLED_MESSAGE =
-            WELCOME_MESSAGE
-                    + "Mobile app installed on your %s!\n\nYou can now use MessageApi, "
-                    + "DataApi, etc.";
+    /**
+     * Link to install mobile app for Android (Play Store).
+     */
+    private static final String URI_ANDROID_PLAY_STORE = "market://details?id=com.tennismath.ui.android";
 
-    // Name of capability listed in Phone app's wear.xml.
-    // IMPORTANT NOTE: This should be named differently than your Wear app's capability.
-    private static final String CAPABILITY_PHONE_APP = "verify_remote_example_phone_app";
-
-    // Links to install mobile app for both Android (Play Store) and iOS.
-    // TODO: Replace with your links/packages.
-    private static final String ANDROID_MARKET_APP_URI =
-            "market://details?id=com.example.android.wearable.wear.wearverifyremoteapp";
-
-    // TODO: Replace with your links/packages.
-    private static final String APP_STORE_APP_URI =
-            "https://itunes.apple.com/us/app/android-wear/id986496028?mt=8";
+    /**
+     * Link to install mobile app for iOS.
+     */
+    // FIXME: Replace with AppStore link (when app is ready)
+    private static final String URI_IOS_APP_STORE = "https://itunes.apple.com/us/app/android-wear/id000000000?mt=8";
 
     // Result from sending RemoteIntent to phone to open app in play/app store.
-    private final ResultReceiver mResultReceiver = new ResultReceiver(new Handler()) {
+    private final ResultReceiver resultReceiver = new ResultReceiver(new Handler()) {
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData) {
-
             if (resultCode == RemoteIntent.RESULT_OK) {
                 new ConfirmationOverlay().showOn(MainWearActivity.this);
 
@@ -90,34 +86,32 @@ public class MainWearActivity extends FragmentActivity implements
                 new ConfirmationOverlay()
                         .setType(ConfirmationOverlay.FAILURE_ANIMATION)
                         .showOn(MainWearActivity.this);
-
             } else {
                 throw new IllegalStateException("Unexpected result " + resultCode);
             }
         }
     };
 
-    private TextView mInformationTextView;
-    private Button mRemoteOpenButton;
+    private TextView txtPrompt;
+    private Button btnInstallApp;
 
-    private Node mAndroidPhoneNodeWithApp;
+    private Node androidPhoneNodeWithApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate()");
+        Log.d(TAG, "# onCreate()");
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
         // Enables Ambient mode.
         AmbientModeSupport.attach(this);
+        //TODO use different screen colors for both modes
 
-        mInformationTextView = findViewById(R.id.information_text_view);
-        mRemoteOpenButton = findViewById(R.id.remote_open_button);
+        txtPrompt = findViewById(R.id.txt_prompt);
+        btnInstallApp = findViewById(R.id.btn_install_app);
 
-        mInformationTextView.setText(CHECKING_MESSAGE);
-
-        mRemoteOpenButton.setOnClickListener(new View.OnClickListener() {
+        btnInstallApp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 openAppInStoreOnPhone();
@@ -128,7 +122,7 @@ public class MainWearActivity extends FragmentActivity implements
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause()");
+        Log.d(TAG, "# onPause()");
         super.onPause();
 
         Wearable.getCapabilityClient(this).removeListener(this, CAPABILITY_PHONE_APP);
@@ -136,7 +130,7 @@ public class MainWearActivity extends FragmentActivity implements
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume()");
+        Log.d(TAG, "# onResume()");
         super.onResume();
 
         Wearable.getCapabilityClient(this).addListener(this, CAPABILITY_PHONE_APP);
@@ -148,27 +142,32 @@ public class MainWearActivity extends FragmentActivity implements
      * Updates UI when capabilities change (install/uninstall phone app).
      */
     public void onCapabilityChanged(CapabilityInfo capabilityInfo) {
-        Log.d(TAG, "onCapabilityChanged(): " + capabilityInfo);
+        Log.d(TAG, "# onCapabilityChanged(): " + capabilityInfo);
 
-        mAndroidPhoneNodeWithApp = pickBestNodeId(capabilityInfo.getNodes());
+        androidPhoneNodeWithApp = pickBestNodeId(capabilityInfo.getNodes());
         verifyNodeAndUpdateUI();
     }
 
     private void checkIfPhoneHasApp() {
-        Log.d(TAG, "checkIfPhoneHasApp()");
+        Log.d(TAG, "# checkIfPhoneHasApp()");
+
+        txtPrompt.setText(MSG_CHECKING_APP);
 
         Task<CapabilityInfo> capabilityInfoTask = Wearable.getCapabilityClient(this)
                 .getCapability(CAPABILITY_PHONE_APP, CapabilityClient.FILTER_ALL);
 
         capabilityInfoTask.addOnCompleteListener(new OnCompleteListener<CapabilityInfo>() {
             @Override
-            public void onComplete(Task<CapabilityInfo> task) {
+            public void onComplete(@NonNull Task<CapabilityInfo> task) {
 
                 if (task.isSuccessful()) {
                     Log.d(TAG, "Capability request succeeded.");
                     CapabilityInfo capabilityInfo = task.getResult();
-                    mAndroidPhoneNodeWithApp = pickBestNodeId(capabilityInfo.getNodes());
-
+                    if (capabilityInfo!=null) {
+                        androidPhoneNodeWithApp = pickBestNodeId(capabilityInfo.getNodes());
+                    } else {
+                        Log.e(TAG, "Cannot get capability info");
+                    }
                 } else {
                     Log.d(TAG, "Capability request failed to return any results.");
                 }
@@ -180,58 +179,53 @@ public class MainWearActivity extends FragmentActivity implements
 
     private void verifyNodeAndUpdateUI() {
 
-        if (mAndroidPhoneNodeWithApp != null) {
+        if (androidPhoneNodeWithApp != null) {
+            Log.d(TAG, String.format("Phone app installed: %s", androidPhoneNodeWithApp.getDisplayName()));
+            txtPrompt.setText(MSG_APP_INSTALLED);
+            btnInstallApp.setVisibility(View.INVISIBLE);
 
-            // TODO: Add your code to communicate with the phone app via
-            // Wear APIs (MessageApi, DataApi, etc.)
-
-            String installMessage =
-                    String.format(INSTALLED_MESSAGE, mAndroidPhoneNodeWithApp.getDisplayName());
-            Log.d(TAG, installMessage);
-            mInformationTextView.setText(installMessage);
-            mRemoteOpenButton.setVisibility(View.INVISIBLE);
+            // TODO: wait for the phone's message that tracking is started, then switch activity to ScoreTrackingActivity
 
         } else {
-            Log.d(TAG, MISSING_MESSAGE);
-            mInformationTextView.setText(MISSING_MESSAGE);
-            mRemoteOpenButton.setVisibility(View.VISIBLE);
+            Log.d(TAG, MSG_APP_MISSING);
+            txtPrompt.setText(MSG_APP_MISSING);
+            btnInstallApp.setVisibility(View.VISIBLE);
         }
     }
 
     private void openAppInStoreOnPhone() {
-        Log.d(TAG, "openAppInStoreOnPhone()");
+        Log.d(TAG, "# openAppInStoreOnPhone()");
 
         int phoneDeviceType = PhoneDeviceType.getPhoneDeviceType(getApplicationContext());
         switch (phoneDeviceType) {
-            // Paired to Android phone, use Play Store URI.
             case PhoneDeviceType.DEVICE_TYPE_ANDROID:
+                // Paired to Android phone, use Play Store URI.
                 Log.d(TAG, "\tDEVICE_TYPE_ANDROID");
+
                 // Create Remote Intent to open Play Store listing of app on remote device.
                 Intent intentAndroid =
                         new Intent(Intent.ACTION_VIEW)
                                 .addCategory(Intent.CATEGORY_BROWSABLE)
-                                .setData(Uri.parse(ANDROID_MARKET_APP_URI));
-
+                                .setData(Uri.parse(URI_ANDROID_PLAY_STORE));
                 RemoteIntent.startRemoteActivity(
                         getApplicationContext(),
                         intentAndroid,
-                        mResultReceiver);
+                        resultReceiver);
                 break;
 
-            // Paired to iPhone, use iTunes App Store URI
             case PhoneDeviceType.DEVICE_TYPE_IOS:
+                // Paired to iPhone, use iTunes App Store URI
                 Log.d(TAG, "\tDEVICE_TYPE_IOS");
 
                 // Create Remote Intent to open App Store listing of app on iPhone.
                 Intent intentIOS =
                         new Intent(Intent.ACTION_VIEW)
                                 .addCategory(Intent.CATEGORY_BROWSABLE)
-                                .setData(Uri.parse(APP_STORE_APP_URI));
-
+                                .setData(Uri.parse(URI_IOS_APP_STORE));
                 RemoteIntent.startRemoteActivity(
                         getApplicationContext(),
                         intentIOS,
-                        mResultReceiver);
+                        resultReceiver);
                 break;
 
             case PhoneDeviceType.DEVICE_TYPE_ERROR_UNKNOWN:
@@ -244,39 +238,42 @@ public class MainWearActivity extends FragmentActivity implements
      * There should only ever be one phone in a node set (much less w/ the correct capability), so
      * I am just grabbing the first one (which should be the only one).
      */
-    private Node pickBestNodeId(Set<Node> nodes) {
-        Log.d(TAG, "pickBestNodeId(): " + nodes);
+    private static Node pickBestNodeId(@NonNull Set<Node> nodes) {
+        Log.d(TAG, "# pickBestNodeId(): " + nodes);
 
-        Node bestNodeId = null;
         // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
-        for (Node node : nodes) {
-            bestNodeId = node;
-        }
-        return bestNodeId;
+
+        return nodes.isEmpty() ? null : nodes.iterator().next();
     }
 
     @Override
     public AmbientModeSupport.AmbientCallback getAmbientCallback() {
-        return new MyAmbientCallback();
+        return new AmbientModeSupport.AmbientCallback () {
+            @Override
+            public void onEnterAmbient(Bundle ambientDetails) {
+                super.onEnterAmbient(ambientDetails);
+
+                Log.d(TAG, "# onEnterAmbient() " + ambientDetails);
+
+                txtPrompt.setTextColor(Color.GRAY);
+                txtPrompt.getPaint().setAntiAlias(false);
+
+                btnInstallApp.setEnabled(false);
+            }
+
+            @Override
+            public void onExitAmbient() {
+                super.onExitAmbient();
+
+                Log.d(TAG, "# onExitAmbient()");
+
+                txtPrompt.setTextColor(Color.WHITE);
+                txtPrompt.getPaint().setAntiAlias(true);
+
+                btnInstallApp.setEnabled(true);
+
+            }
+         };
     }
 
-    private class MyAmbientCallback extends AmbientModeSupport.AmbientCallback {
-        /** Prepares the UI for ambient mode. */
-        @Override
-        public void onEnterAmbient(Bundle ambientDetails) {
-            super.onEnterAmbient(ambientDetails);
-
-            Log.d(TAG, "onEnterAmbient() " + ambientDetails);
-            // In our case, the assets are already in black and white, so we don't update UI.
-        }
-
-        /** Restores the UI to active (non-ambient) mode. */
-        @Override
-        public void onExitAmbient() {
-            super.onExitAmbient();
-
-            Log.d(TAG, "onExitAmbient()");
-            // In our case, the assets are already in black and white, so we don't update UI.
-        }
-    }
 }
