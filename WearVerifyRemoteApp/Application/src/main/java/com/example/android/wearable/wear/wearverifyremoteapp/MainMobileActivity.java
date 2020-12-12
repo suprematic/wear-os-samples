@@ -67,7 +67,7 @@ public class MainMobileActivity extends AppCompatActivity implements
      *
      * IMPORTANT NOTE: This should be named differently than your Phone app's capability.
      */
-    private static final String CAPABILITY_WEAR_APP = "verify_tennis-math_wear_app";
+    private static final String CAPABILITY_WEAR_APP = "verifywear_wear_app";
 
     /**
      * Link to Tennis Math Wear app (in Wear Play Store).

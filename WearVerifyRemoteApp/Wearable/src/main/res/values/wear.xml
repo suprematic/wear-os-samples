@@ -2,6 +2,6 @@
 <resources>
     <string-array name="android_wear_capabilities">
         <!-- IMPORTANT NOTE: Should be different than capability in App res/values/wear.xml. -->
-        <item>verify_tennis-math_wear_app</item>
+        <item>verifywear_wear_app</item>
     </string-array>
 </resources>

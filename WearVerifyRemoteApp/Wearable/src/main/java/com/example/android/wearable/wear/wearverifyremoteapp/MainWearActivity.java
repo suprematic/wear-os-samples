@@ -48,21 +48,21 @@ public class MainWearActivity extends FragmentActivity implements
 
     private static final String TAG = MainWearActivity.class.getSimpleName();
 
-    private static final String MSG_WELCOME = "Tennis Math\n\n";
+    private static final String MSG_WELCOME = "WearVerify\n\n";
     private static final String MSG_CHECKING_APP = MSG_WELCOME
             + "Checking for Mobile app...";
     private static final String MSG_APP_MISSING = MSG_WELCOME
-            + "You are missing the Tennis Math app, please click on the button below to "
+            + "You are missing the phone app, please click on the button below to "
             + "install it on your phone.";
 
     private static final String MSG_APP_INSTALLED = MSG_WELCOME
-            + "Start tracking and activate Wear interface in the app.";
+            + "You are ready to go.";
 
     /** Name of capability listed in Phone app's wear.xml.
      *
      * IMPORTANT NOTE: This should be named differently than your Wear app's capability.
      */
-    private static final String CAPABILITY_PHONE_APP = "verify_tennis-math_phone_app";
+    private static final String CAPABILITY_PHONE_APP = "verifywear_phone_app";
 
     /**
      * Link to install mobile app for Android (Play Store).
