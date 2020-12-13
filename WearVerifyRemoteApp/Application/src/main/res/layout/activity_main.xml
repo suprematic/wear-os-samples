@@ -24,7 +24,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:context="com.example.android.wearable.wear.wearverifyremoteapp.MainMobileActivity">
+    tools:context="com.example.android.wearable.MainMobileActivity">
 
     <TextView
         android:id="@+id/information_text_view"

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.wear.wearverifyremoteapp;
+package com.example.android.wearable;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -26,8 +26,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.android.wearable.wear.wearverifyremoteapp.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.wearable.CapabilityClient;
@@ -38,6 +40,7 @@ import com.google.android.wearable.intent.RemoteIntent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -135,10 +138,32 @@ public class MainMobileActivity extends AppCompatActivity implements
         Wearable.getCapabilityClient(this).removeListener(this, CAPABILITY_WEAR_APP);
     }
 
+    private void dumpCapas() {
+        Wearable.getCapabilityClient(this).getAllCapabilities(CapabilityClient.FILTER_ALL).addOnCompleteListener(
+                new OnCompleteListener<Map<String, CapabilityInfo>>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Map<String, CapabilityInfo>> task) {
+                        Map<String, CapabilityInfo> capas = task.getResult();
+
+                        Log.d(TAG, String.format("### ALL CAPAS: %s", capas));
+                        for(Map.Entry<String, CapabilityInfo> c : capas.entrySet()) {
+                            String k = c.getKey(); CapabilityInfo v = c.getValue();
+                            Log.d(TAG, String.format("\t### %s : %s - %s", k, v.getName(), v.getNodes()));
+                            for(Node n : v.getNodes()){
+                                Log.d(TAG, String.format("\t\t### %s - %s", n.getDisplayName(), n));
+                            }
+                        }
+                    }
+                });
+    }
+
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume()");
         super.onResume();
+
+        dumpCapas();
+
 
         Wearable.getCapabilityClient(this).addListener(this, CAPABILITY_WEAR_APP);
 
@@ -156,7 +181,9 @@ public class MainMobileActivity extends AppCompatActivity implements
      * Updates UI when capabilities change (install/uninstall wear app).
      */
     public void onCapabilityChanged(CapabilityInfo capabilityInfo) {
-        Log.d(TAG, "onCapabilityChanged(): " + capabilityInfo);
+        Log.d(TAG, "### onCapabilityChanged(): " + capabilityInfo);
+
+        dumpCapas();
 
         mWearNodesWithApp = capabilityInfo.getNodes();
 

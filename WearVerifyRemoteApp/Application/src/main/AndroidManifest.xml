@@ -24,7 +24,7 @@
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/AppThemeCustom">
 
-        <activity android:name=".MainMobileActivity">
+        <activity android:name="com.example.android.wearable.MainMobileActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
